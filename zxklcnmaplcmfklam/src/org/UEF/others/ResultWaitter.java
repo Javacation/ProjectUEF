@@ -1,5 +1,8 @@
 package org.UEF.others;
 
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * UEFManager에 전송된 Order의 결과값을 받기위한 클래스<br>
  * setResult를 호출하여 결과값을 지정하면 getResult, getResultNow로 값을 받는다.
@@ -7,22 +10,26 @@ package org.UEF.others;
 public class ResultWaitter<T> {
 	private T result = null;
 	private boolean isResultReturn = false;
+	private ReentrantLock lock = new ReentrantLock();
+	private Condition cond = lock.newCondition();
 	
 	/**
 	 * 해당 객체에 결과값을 삽입하는 메소드로 단 한번만 삽입할 수 있다.(synchronized)
 	 * @param result 삽입할 결과 값
 	 * */
-	synchronized public void setResult(T result){
+	public void setResult(T result){
 		if(!isResultReturn) {
 			try {
-				
+				lock.lock();
 				this.result = result;
 				isResultReturn = true;
+				cond.signalAll();
 			}
 			catch (Exception e) {
 				e.printStackTrace();
 			}
 			finally {
+				lock.unlock();
 			}
 		}	
 	}
@@ -35,9 +42,19 @@ public class ResultWaitter<T> {
 		T tempResult = null;
 
 		
-		while(!isResultReturn){
-			try {Thread.sleep(1);
-			} catch (Exception e) {}
+		try {
+			lock.lock();
+			
+			while(!isResultReturn){
+				try {cond.await();
+				} catch (Exception e) {}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			lock.unlock();
 		}
 
 		tempResult = result;

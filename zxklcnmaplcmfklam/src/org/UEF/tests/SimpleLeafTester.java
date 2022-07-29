@@ -16,7 +16,7 @@ public class SimpleLeafTester {
 		UEFManager.getInstance().requestExecute();
 		
 		try {
-			Thread.sleep(12000);
+			Thread.sleep(21000);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
